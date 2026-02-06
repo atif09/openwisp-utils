@@ -1,0 +1,28 @@
+name: Backport fixes to stable branch
+
+on:
+  pull_request_target:
+    types: [closed]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  backport:
+    if: >
+      (
+        github.event_name == 'pull_request_target' &&
+        github.event.pull_request.merged
+      ) || (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request &&
+        github.event.issue.state == 'closed' &&
+        contains(fromJSON('["MEMBER", "OWNER"]'), github.event.comment.author_association) &&
+        startsWith(github.event.comment.body, '/backport')
+      )
+    uses: openwisp/openwisp-utils/.github/workflows/reusable-backport.yml@master
+    with:
+      source_pr_number: ${{ github.event.pull_request.number || github.event.issue.number }}
