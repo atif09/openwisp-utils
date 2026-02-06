@@ -22,6 +22,6 @@ jobs:
         startsWith(github.event.comment.body, '/backport')
       )
 
-    uses: openwisp/openwisp-utils/.github/workflows/resuable-backport.yml@master
+    uses: ./.github/workflows/reusable-backport.yml
     with:
       source_pr_number: ${{ github.event.pull_request.number || github.event.issue.number }}
