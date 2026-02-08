@@ -1,4 +1,4 @@
-openwisp-utils
+openwisp-utils hi
 ==============
 
 .. image:: https://github.com/openwisp/openwisp-utils/actions/workflows/ci.yml/badge.svg
