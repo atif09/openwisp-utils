@@ -7,7 +7,7 @@ openwisp-utils CONFLICT TEST
 
 .. image:: https://coveralls.io/repos/github/openwisp/openwisp-utils/badge.svg
     :target: https://coveralls.io/github/openwisp/openwisp-utils
-    :alt: Test coverage
+    :alt: Test coveragw
 
 .. image:: https://img.shields.io/librariesio/release/github/openwisp/openwisp-utils
     :target: https://libraries.io/github/openwisp/openwisp-utils#repository_dependencies
