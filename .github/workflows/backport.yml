@@ -21,8 +21,8 @@ jobs:
         github.event.issue.pull_request &&
         github.event.issue.state == 'closed' &&
         contains(fromJSON('["MEMBER", "OWNER"]'), github.event.comment.author_association) &&
-        startsWith(github.event.comment.body, '/backport')
+        github.event.comment.body == '/backport'
       )
-    uses: openwisp/openwisp-utils/.github/workflows/reusable-backport.yml@master
+    uses: ./.github/workflows/reusable-backport.yml
     with:
       source_pr_number: ${{ github.event.pull_request.number || github.event.issue.number }}
