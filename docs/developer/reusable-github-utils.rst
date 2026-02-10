@@ -115,3 +115,46 @@ example:
         git checkout $VERSION
         git reset --hard origin/master
         git push origin $VERSION --force-with-lease
+
+Backport Fixes to Stable Branch
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This re-usable workflow cherry-picks merged pull requests to stable
+branches using `korthout/backport-action
+<https://github.com/korthout/backport-action>`_.
+
+Add a ``backport <branch-name>`` label to a pull request (e.g., ``backport
+1.1``) and the workflow will create a backport pull request when the
+original is merged. Organization members can also comment ``/backport`` on
+a merged pull request to trigger it manually.
+
+.. code-block:: yaml
+
+    name: Backport fixes to stable branch
+
+    on:
+      pull_request_target:
+        types: [closed]
+      issue_comment:
+        types: [created]
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    jobs:
+      backport:
+        if: >
+          (
+            github.event_name == 'pull_request_target' &&
+            github.event.pull_request.merged
+          ) || (
+            github.event_name == 'issue_comment' &&
+            github.event.issue.pull_request &&
+            github.event.issue.state == 'closed' &&
+            contains(fromJSON('["MEMBER", "OWNER"]'), github.event.comment.author_association) &&
+            github.event.comment.body == '/backport'
+          )
+        uses: openwisp/openwisp-utils/.github/workflows/reusable-backport.yml@master
+        with:
+          source_pr_number: ${{ github.event.pull_request.number || github.event.issue.number }}
