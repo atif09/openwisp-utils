@@ -1,21 +1,94 @@
-name: Backport
+name: Backport fixes to stable branch
 
 on:
   workflow_call:
     inputs:
-      source_pr_number:
-        description: "The PR number to backport"
-        required: true
+      commit_sha:
+        description: "The merge commit SHA to cherry-pick"
+        required: false
+        type: string
+        default: ""
+      pr_number:
+        description: "The PR number (for comment trigger)"
+        required: false
         type: number
+        default: 0
+      comment_body:
+        description: "The comment body (for comment trigger)"
+        required: false
+        type: string
+        default: ""
 
 jobs:
-  backport:
+  parse:
     runs-on: ubuntu-latest
+    outputs:
+      branches: ${{ steps.extract.outputs.branches }}
+      sha: ${{ steps.extract.outputs.sha }}
+    steps:
+      - name: Extract backport targets
+        id: extract
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "${{ inputs.commit_sha }}" ]; then
+            SHA="${{ inputs.commit_sha }}"
+            COMMIT_MSG=$(gh api repos/${{ github.repository }}/git/commits/$SHA --jq '.message')
+            BRANCHES=$(echo "$COMMIT_MSG" | grep -oP '\[backport\s+\K[^\]]+' | tr '\n' ',' | sed 's/,$//')
+          else
+            SHA=$(gh pr view ${{ inputs.pr_number }} --repo ${{ github.repository }} --json mergeCommit --jq '.mergeCommit.oid')
+            COMMENT="${{ inputs.comment_body }}"
+            BRANCHES=$(echo "$COMMENT" | grep -oP '/backport\s+\K\S+' | tr '\n' ',' | sed 's/,$//')
+          fi
 
+          if [ -z "$BRANCHES" ]; then
+            echo "No backport targets found."
+            echo "branches=[]" >> $GITHUB_OUTPUT
+          else
+            JSON=$(echo "$BRANCHES" | tr ',' '\n' | jq -R . | jq -sc .)
+            echo "branches=$JSON" >> $GITHUB_OUTPUT
+          fi
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+
+  backport:
+    needs: parse
+    if: needs.parse.outputs.branches != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ${{ fromJSON(needs.parse.outputs.branches) }}
     steps:
       - uses: actions/checkout@v6
-
-      - name: Create backport pull requests
-        uses: korthout/backport-action@v4
         with:
-          source_pr_number: ${{ inputs.source_pr_number }}
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Cherry-pick and create PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA="${{ needs.parse.outputs.sha }}"
+          BRANCH="${{ matrix.branch }}"
+          PR_NUMBER=$(gh api repos/${{ github.repository }}/commits/$SHA/pulls --jq '.[0].number')
+          BACKPORT_BRANCH="backport/${PR_NUMBER}-to-${BRANCH}"
+          PR_TITLE=$(gh api repos/${{ github.repository }}/commits/$SHA/pulls --jq '.[0].title')
+
+          git checkout -b "$BACKPORT_BRANCH" "origin/$BRANCH"
+
+          if git cherry-pick -x "$SHA"; then
+            git push origin "$BACKPORT_BRANCH"
+            gh pr create \
+              --base "$BRANCH" \
+              --head "$BACKPORT_BRANCH" \
+              --title "[backport] $PR_TITLE (to $BRANCH)" \
+              --body "Backport of #$PR_NUMBER to \`$BRANCH\`."
+          else
+            git cherry-pick --abort
+            gh pr comment "$PR_NUMBER" \
+              --body "❌ Cherry-pick to \`$BRANCH\` failed due to conflicts. Please backport manually."
+          fi
