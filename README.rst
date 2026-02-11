@@ -1,4 +1,5 @@
 .. conflict test
+.. conflict test
 openwisp-utils hi
 ==============
 
