@@ -89,6 +89,20 @@ jobs:
               --body "Backport of #$PR_NUMBER to \`$BRANCH\`."
           else
             git cherry-pick --abort
-            gh pr comment "$PR_NUMBER" \
-              --body "❌ Cherry-pick to \`$BRANCH\` failed due to conflicts. Please backport manually."
+            {
+              echo "❌ Cherry-pick to \`$BRANCH\` failed due to conflicts. Please backport manually:"
+              echo ""
+              echo "\`\`\`bash"
+              echo "git fetch origin $BRANCH"
+              echo "git checkout -b backport/${PR_NUMBER}-to-${BRANCH} origin/$BRANCH"
+              echo "git cherry-pick -x $SHA"
+              echo "# resolve conflicts"
+              echo "git cherry-pick --continue"
+              echo "git push origin backport/${PR_NUMBER}-to-${BRANCH}"
+              echo "\`\`\`"
+              echo ""
+              echo "Then open a PR targeting \`$BRANCH\`."
+            } > /tmp/backport-comment.md
+            gh pr comment "$PR_NUMBER" --body-file /tmp/backport-comment.md
           fi
+
