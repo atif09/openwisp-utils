@@ -45,7 +45,17 @@ def run_git_cliff(version=None):
             file=sys.stderr,
         )
         sys.exit(1)
-
+    # Pull latest tags before calculating changelog
+    try:
+        subprocess.run(
+            ["git", "pull", "--tags"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: Failed to pull tags: {e.stderr}", file=sys.stderr)
+    # Run git-cliff to calculate changelog
     try:
         cmd = ["git", "cliff", "--unreleased", "--config", config_path]
         if version:
@@ -247,7 +257,7 @@ def update_changelog_file(changelog_path, new_block, is_port=False):
     unreleased_block_regex_str = (
         r"^(##\s+(?:Version\s+)?\S+\s+\[Unreleased\](?:.|\n)*?)(?=\n##\s+(?:Version\s+)?|\Z)"
         if is_md
-        else r"^((?:Version\s+)?\S+\s+\[Unreleased\]\n-+(?:.|\n)*?)(?=\n^(?:Version\s+)?\S|\Z)"
+        else r"^((?:Version\s+)?\S+\s+\[Unreleased\]\n-+(?:.|\n)*?)(?=\n(?:Version\s+)?\d+\.\d+\.\d+\s+\[|\Z)"
     )
     unreleased_block_regex = re.compile(
         unreleased_block_regex_str, re.IGNORECASE | re.MULTILINE
