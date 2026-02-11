@@ -1,3 +1,4 @@
+.. squash conflict test
 .. conflict test
 .. conflict test
 openwisp-utils hi
