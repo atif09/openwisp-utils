@@ -88,7 +88,7 @@ jobs:
               --title "[backport] $PR_TITLE (to $BRANCH)" \
               --body "Backport of #$PR_NUMBER to \`$BRANCH\`."
           else
-            git cherry-pick --abort
+            git cherry-pick --abort || true
             {
               echo "❌ Cherry-pick to \`$BRANCH\` failed due to conflicts. Please backport manually:"
               echo ""
