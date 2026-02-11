@@ -1,3 +1,4 @@
+.. real conflict test
 .. squash conflict test
 .. conflict test
 .. conflict test
