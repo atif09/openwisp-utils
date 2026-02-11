@@ -1,2 +1,3 @@
 conflict line
 different line
+different line
