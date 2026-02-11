@@ -90,16 +90,5 @@ jobs:
           else
             git cherry-pick --abort
             gh pr comment "$PR_NUMBER" \
-              --body "❌ Cherry-pick to \`$BRANCH\` failed due to conflicts. Please backport manually:
-
-            \`\`\`bash
-            git fetch origin $BRANCH
-            git checkout -b backport/${PR_NUMBER}-to-${BRANCH} origin/$BRANCH
-            git cherry-pick -x $SHA
-            # resolve conflicts
-            git cherry-pick --continue
-            git push origin backport/${PR_NUMBER}-to-${BRANCH}
-            \`\`\`
-
-            Then open a PR targeting \`$BRANCH\`."
+              --body "❌ Cherry-pick to \`$BRANCH\` failed due to conflicts. Please backport manually."
           fi
