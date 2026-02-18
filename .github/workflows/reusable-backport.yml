@@ -127,7 +127,10 @@ jobs:
           git cherry-pick -x "$SHA"
           CHERRY_PICK_STATUS=$?
           if [ $CHERRY_PICK_STATUS -eq 0 ]; then
-            git push origin "$BACKPORT_BRANCH"
+            if ! git push origin "$BACKPORT_BRANCH"; then
+              echo "::error::Failed to push backport branch '$BACKPORT_BRANCH'"
+              exit 1
+            fi
             if ! gh pr create \
                 --base "$BRANCH" \
                 --head "$BACKPORT_BRANCH" \
