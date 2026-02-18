@@ -124,8 +124,8 @@ jobs:
           fi
           BACKPORT_BRANCH="${BACKPORT_BRANCH}-$(date +%s)"
           git checkout -b "$BACKPORT_BRANCH" "origin/$BRANCH"
-          git cherry-pick -x "$SHA"
-          CHERRY_PICK_STATUS=$?
+          CHERRY_PICK_STATUS=0
+          git cherry-pick -x "$SHA" || CHERRY_PICK_STATUS=$?
           if [ $CHERRY_PICK_STATUS -eq 0 ]; then
             if ! git push origin "$BACKPORT_BRANCH"; then
               echo "::error::Failed to push backport branch '$BACKPORT_BRANCH'"
